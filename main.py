@@ -4,6 +4,7 @@ import numpy as np
 import threading
 import select
 import datetime
+import traceback
 
 from config import UDP_PORT,BUFFER_SIZE
 
@@ -18,8 +19,9 @@ class SpeakerRecognition:
         receive_data_thread.start()
 
 
-    def get_time_and_sound_list(self,data):
-        splited = data.split(",")
+    def get_time_and_sound_list(self, data):
+        received = data.decode('utf-8')
+        splited = received.split(",")
         date_str = datetime.datetime.strptime(splited[0],'%Y.%m.%d-%H.%M.%S.%f')
         ms = int(date_str.timestamp() *1000)
         sound_list = [int(value) for value in splited[1:]]
@@ -33,11 +35,11 @@ class SpeakerRecognition:
                 data, addr = self.sock.recvfrom(BUFFER_SIZE)
                 ms,sound_list = self.get_time_and_sound_list(data)
                 # self.sound_list += sound_list
-                print(ms+"  ",end="")
-                print(sound_list)
+                print(str(ms)+"  ",end="")
+                print(len(sound_list))
 
         except Exception as e:
-                print(e)
+                print(traceback.format_exc())
 
 if __name__ == "__main__":
     sr = SpeakerRecognition()
