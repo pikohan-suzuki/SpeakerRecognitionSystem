@@ -1,4 +1,4 @@
-import matplotlob.pyplot as plt
+import matplotlib.pyplot as plt
 import socket
 import numpy as np
 import threading
@@ -7,14 +7,15 @@ import datetime
 
 from config import UDP_PORT,BUFFER_SIZE
 
-class SpeackerRecognition:
+class SpeakerRecognition:
 
     def __init__(self):
         self.sound_list = []
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.sock.bind(("0.0.0.0", UDP_PORT))
 
-        receive_data_thread = threading.Thread(target= receive_data)
+        receive_data_thread = threading.Thread(target= self.receive_data)
+        receive_data_thread.start()
 
 
     def get_time_and_sound_list(self,data):
@@ -26,12 +27,17 @@ class SpeackerRecognition:
 
     def receive_data(self):
         try:
-            while(True):
-                read,_,_ select.select([self.sock.fino()],[],[],0.1)
+            while True:
+                read,_,_ = select.select([self.sock.fileno()],[],[],0.1)
                 if len(read) <= 0 : continue
-                    data, addr = self.sock.recvfrom(BUFFER_SIZE)
-                    ms,sound_list = self.get_time_and_sound_list(data)
-                    self.sound_list += sound_list
+                data, addr = self.sock.recvfrom(BUFFER_SIZE)
+                ms,sound_list = self.get_time_and_sound_list(data)
+                # self.sound_list += sound_list
+                print(ms+"  ",end="")
+                print(sound_list)
 
         except Exception as e:
                 print(e)
+
+if __name__ == "__main__":
+    sr = SpeakerRecognition()
