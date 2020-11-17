@@ -1,6 +1,11 @@
 from config import CALC_FORMANT_INTERVAL
+import matplotlib.pyplot as plt
 import scipy.signal
 import numpy as np
+import glob
+
+import torch
+import torch.nn
 
 def get_formant(sound_list:list):
     sound_list = np.array([value/32768.0 for value in sound_list])
@@ -8,7 +13,7 @@ def get_formant(sound_list:list):
 
     result_x,result_y = [],[]
     
-    for s in range(0,num_sound_list,CALC_FORMANT_INTERVAL):
+    for s in range(22050,num_sound_list,CALC_FORMANT_INTERVAL):
         start,stop = s,s+CALC_FORMANT_INTERVAL
         s_list = sound_list[start:stop]
         N = len(s_list)
@@ -21,7 +26,7 @@ def get_formant(sound_list:list):
         s_list = [0.]*bef + s_list.tolist() + [0.]*aft
         N = 2**i
 
-        w = scipy.signal.hanning(N)
+        w = scipy.signal.windows.hann(N)
         s_list = s_list * w
         dft = np.fft.fft(s_list)
 
@@ -29,10 +34,14 @@ def get_formant(sound_list:list):
         Adft = np.abs(dft)
         Pdft = np.abs(dft)**2
         fscale = np.fft.fftfreq(len(dft),d=1.0/44100)
-        Pdft_dB = 10*np.log10(Pdft[:N//2])
+        Pdft_dB = 20 * np.log10(Pdft[:N//2]/2e-5)
 
-        cps = np.fft.ifft(Pdft_dB)
+        cps = np.real(np.fft.ifft(Pdft_dB))
         quefrency = np.arange(0,44100,44100/N)
+
+        plt.plot(cps)
+        plt.show()
+        break
 
         cepCoef = 20
         cps_lif = np.array(cps)
@@ -54,7 +63,16 @@ def get_formant(sound_list:list):
 
 
 if __name__ == "__main__":
-    f = [2*np.sin(value*np.pi/180)+np.sin(2*value*np.pi/180) for value in range(44100)]
-    x,y = get_formant(f)
-    print(x)
-    print(y)
+    files = glob.glob("./data/*")
+    for file in files:
+        print(file)
+        with open(file) as f:
+            lines = f.readlines()
+        f = []
+        for line in lines:
+            splited=line.split(",")
+            f += [float(value) for value in splited[1:]]
+        # f = [2*np.sin(value*np.pi/180)+np.sin(2*value*np.pi/180) for value in range(44100)]
+        x,y = get_formant(f)
+        print(x)
+        print(y)
